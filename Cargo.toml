@@ -2,3 +2,10 @@
 name = "jsx"
 version = "0.1.0"
 authors = ["Cam Jackson <camjackson89@gmail.com>"]
+repository = "https://github.com/camjackson/jsx-rs"
+readme = "README.md"
+keywords = ["react", "jsx", "html", "javascript"]
+license = "GPL-3.0"
+
+[lib]
+crate-type = ["dylib"]
