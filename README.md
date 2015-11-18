@@ -14,4 +14,4 @@ react.Div {
 }
 ```
 
-Those structs will come from [react-rs](/camjackson/react-rs)
+Those structs will come from [react-rs](https://github.com/camjackson/react-rs)
