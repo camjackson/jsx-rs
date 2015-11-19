@@ -11,8 +11,20 @@ impl Div {
     }
 }
 
+struct Img {
+    pub src: String,
+}
+
+impl Img {
+    pub fn render(&self) -> String {
+        format!("<img src='{}'/>", &self.src)
+    }
+}
+
 fn main() {
-    let div = jsx!(<Div class_name="world"></div>);
+    let div = jsx!(<div class_name="world"></div>);
+    //let img = jsx!(<Img src="pic.jpg"></div>);
 
     println!("{}", div.render());
+    //println!("{}", img.render());
 }

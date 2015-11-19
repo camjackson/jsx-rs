@@ -21,6 +21,8 @@ fn compile_jsx(cx: &mut ExtCtxt, sp: Span, args: &[TokenTree]) -> Box<MacResult 
         }
     };
 
+    let tag = capitalise_identifier(tag);
+
     let path_to_struct = path_to_struct(tag, &sp);
     let fields = vec![field("class_name", "hello", cx, &sp)];
 
@@ -56,6 +58,12 @@ fn expect_ident(actual: &TokenTree) -> Result<Ident, String> {
         },
        _ => Err("I don't know how to parse that :(".to_string())
     }
+}
+
+fn capitalise_identifier(identifier: Ident) -> Ident {
+    let name = identifier.name.as_str().to_string();
+    let capitalised = name[0..1].to_uppercase().to_string() + &name[1..];
+    Ident::with_empty_ctxt(intern(&capitalised))
 }
 
 fn path_to_struct(identifier: Ident, sp: &Span) -> Path {
