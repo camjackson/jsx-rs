@@ -9,7 +9,7 @@ use syntax::codemap::{Span, Spanned};
 use syntax::ast::{TokenTree, Ident, PathSegment, PathParameters, Path, Field};
 use syntax::ext::base::{ExtCtxt, MacResult, MacEager, DummyResult};
 use syntax::ext::build::AstBuilder;
-use syntax::parse::token::{Token, intern};
+use syntax::parse::token::{Token, Lit, intern};
 use rustc::plugin::Registry;
 
 fn compile_jsx(cx: &mut ExtCtxt, sp: Span, args: &[TokenTree]) -> Box<MacResult + 'static> {
@@ -21,18 +21,57 @@ fn compile_jsx(cx: &mut ExtCtxt, sp: Span, args: &[TokenTree]) -> Box<MacResult 
         }
     };
 
-    let tag = capitalise_identifier(tag);
-
-    let path_to_struct = path_to_struct(tag, &sp);
-    let fields = vec![field("class_name", "hello", cx, &sp)];
-
-    MacEager::expr(cx.expr_struct(sp, path_to_struct, fields))
+    tag.as_expr(cx, &sp)
 }
 
-fn read_open_tag(tokens: &[TokenTree]) -> Result<Ident, String> {
+struct Tag {
+    name: Ident,
+    attribute: Ident,
+    value: Lit
+}
+
+impl Tag {
+    fn path_to_struct(&self, sp: &Span) -> Path {
+        let cap_name = capitalise_identifier(self.name);
+
+        let name_segment = PathSegment { identifier: cap_name, parameters: PathParameters::none() };
+        Path { span: *sp, global: false, segments: vec![name_segment] }
+    }
+
+    fn fields(&self, cx: &ExtCtxt, sp: &Span) -> Vec<Field> {
+        let identifier = Spanned { node: self.attribute, span: *sp };
+
+        let value = match self.value {
+            Lit::Byte(val) => val.as_str(),
+            Lit::Char(val) => val.as_str(),
+            Lit::Integer(val) => val.as_str(),
+            Lit::Float(val) => val.as_str(),
+            Lit::Str_(val) => val.as_str(),
+            Lit::StrRaw(val, _) => val.as_str(),
+            Lit::ByteStr(val) => val.as_str(),
+            Lit::ByteStrRaw(val, _) => val.as_str(),
+        }.to_string();
+
+        let expression = quote_expr!(cx, $value.to_string());
+        vec![Field { ident: identifier, expr: expression, span: *sp }]
+    }
+
+    fn as_expr(&self, cx: &ExtCtxt, sp: &Span) -> Box<MacResult + 'static>{
+        MacEager::expr(cx.expr_struct(*sp, self.path_to_struct(sp), self.fields(cx, sp)))
+    }
+}
+
+fn read_open_tag(tokens: &[TokenTree]) -> Result<Tag, String> {
     try!(expect_token(&tokens[0], Token::Lt));
-    let tag = try!(expect_ident(&tokens[1]));
-    Ok(tag)
+    let name = try!(expect_ident(&tokens[1]));
+    let attribute = try!(expect_ident(&tokens[2]));
+    try!(expect_token(&tokens[3], Token::Eq));
+    let value = try!(expect_lit(&tokens[4]));
+    Ok(Tag {
+        name: name,
+        attribute: attribute,
+        value: value
+    })
 }
 
 fn expect_token(actual: &TokenTree, expected: Token) -> Result<(), String> {
@@ -60,22 +99,22 @@ fn expect_ident(actual: &TokenTree) -> Result<Ident, String> {
     }
 }
 
+fn expect_lit(actual: &TokenTree) -> Result<Lit, String> {
+    match *actual {
+        TokenTree::Token(_, ref token) => {
+            match *token {
+                Token::Literal(ident, _) => Ok(ident),
+                _ => Err(format!("Expected literal but found {:?}", token))
+            }
+        },
+       _ => Err("I don't know how to parse that :(".to_string())
+    }
+}
+
 fn capitalise_identifier(identifier: Ident) -> Ident {
     let name = identifier.name.as_str().to_string();
     let capitalised = name[0..1].to_uppercase().to_string() + &name[1..];
     Ident::with_empty_ctxt(intern(&capitalised))
-}
-
-fn path_to_struct(identifier: Ident, sp: &Span) -> Path {
-    //let identifier = Ident::with_empty_ctxt(intern(name));
-    let name_segment = PathSegment { identifier: identifier, parameters: PathParameters::none() };
-    Path { span: *sp, global: false, segments: vec![name_segment] }
-}
-
-fn field(name: &str, val: &str, cx: &ExtCtxt, sp: &Span) -> Field {
-    let identifier = Spanned { node: Ident::with_empty_ctxt(intern(name)), span: *sp };
-    let expression = quote_expr!(cx, $val.to_string());
-    Field { ident: identifier, expr: expression, span: *sp }
 }
 
 #[plugin_registrar]
