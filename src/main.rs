@@ -23,8 +23,8 @@ impl Img {
 
 fn main() {
     let div = jsx!(<div class_name="world"></div>);
-    //let img = jsx!(<Img src="pic.jpg"></div>);
+    let img = jsx!(<img src="pic.jpg"></img>); //TODO: Make self-terminating
 
     println!("{}", div.render());
-    //println!("{}", img.render());
+    println!("{}", img.render());
 }
