@@ -2,7 +2,7 @@
 #![plugin(jsx)]
 
 struct Div {
-    pub class_name: String,
+    pub class_name: &'static str,
 }
 
 impl Div {
@@ -12,7 +12,7 @@ impl Div {
 }
 
 struct Img {
-    pub src: String,
+    pub src: &'static str,
 }
 
 impl Img {

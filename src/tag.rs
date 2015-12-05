@@ -7,11 +7,11 @@ use syntax::parse::token::{Lit, intern};
 pub struct Tag {
     name: Ident,
     attribute: Ident,
-    value: Lit
+    value: String,
 }
 
 impl Tag {
-    pub fn new(name: Ident, attribute: Ident, value: Lit) -> Tag {
+    pub fn new(name: Ident, attribute: Ident, value: String) -> Tag {
         Tag { name: name, attribute: attribute, value: value }
     }
 
@@ -28,19 +28,9 @@ impl Tag {
 
     fn fields(&self, cx: &ExtCtxt, sp: &Span) -> Vec<Field> {
         let identifier = Spanned { node: self.attribute, span: *sp };
+        let value = &self.value;
 
-        let value = match self.value {
-            Lit::Byte(val) => val.as_str(),
-            Lit::Char(val) => val.as_str(),
-            Lit::Integer(val) => val.as_str(),
-            Lit::Float(val) => val.as_str(),
-            Lit::Str_(val) => val.as_str(),
-            Lit::StrRaw(val, _) => val.as_str(),
-            Lit::ByteStr(val) => val.as_str(),
-            Lit::ByteStrRaw(val, _) => val.as_str(),
-        }.to_string();
-
-        let expression = quote_expr!(cx, $value.to_string());
+        let expression = quote_expr!(cx, $value);
         vec![Field { ident: identifier, expr: expression, span: *sp }]
     }
 }

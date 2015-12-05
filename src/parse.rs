@@ -12,7 +12,7 @@ pub fn read_open_tag(tokens: &[TokenTree]) -> Result<Tag, String> {
 
     let attribute = try!(expect_ident(&tokens[2]));
     try!(expect_token(&tokens[3], Token::Eq));
-    let value = try!(expect_lit(&tokens[4]));
+    let value = try!(expect_string_lit(&tokens[4]));
 
     try!(expect_token(&tokens[5], Token::Gt));
 
@@ -71,11 +71,16 @@ fn expect_ident(actual: &TokenTree) -> Result<Ident, String> {
     }
 }
 
-fn expect_lit(actual: &TokenTree) -> Result<Lit, String> {
+fn expect_string_lit(actual: &TokenTree) -> Result<String, String> {
     match *actual {
         TokenTree::Token(_, ref token) => {
             match *token {
-                Token::Literal(ident, _) => Ok(ident),
+                Token::Literal(lit, _) => {
+                    match lit {
+                        Lit::Str_(string) => Ok(string.as_str().to_string()),
+                        _ => Err(format!("Expected string literal for attribute value, but found {:?}", lit))
+                    }
+                }
                 _ => Err(format!("Expected literal but found {:?}", token))
             }
         },
